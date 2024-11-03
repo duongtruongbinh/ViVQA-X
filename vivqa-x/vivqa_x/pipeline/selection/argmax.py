@@ -2,6 +2,7 @@ from vivqa_x.pipeline.selection.utils import voting
 import numpy as np
 np.random.seed(41)
 
+
 def argmax_method(sample_input, avr_score):
     # # minmax scaling
     # avr_score = min_max_scaling(avr_score)
@@ -71,3 +72,4 @@ def argmax_method(sample_input, avr_score):
     data_point_return["explanation_selection"] = split_string[2]
     
     return data_point_return
+

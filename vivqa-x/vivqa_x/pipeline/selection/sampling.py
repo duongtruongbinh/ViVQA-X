@@ -1,10 +1,10 @@
 import numpy as np
 from collections import Counter
-from vivqa_x.pipeline.selection.utils import voting, get_softmax, divide_list_by_float, normalize_list, get_temperature_scores
+from vivqa_x.pipeline.selection.utils import voting, get_softmax, divide_list_by_float, normalize_list, get_temperature_score
 np.random.seed(41)
 
 
-avr_score = {
+avr_score_stander = {
     "gpt": 0.6297,
     "llama": 0.4767,
     "gemma": 0.5787,
@@ -21,10 +21,17 @@ avr_score_wo_avr = {
 }
 
 
-def sampling_method(sample_input, avr_score):
-    # # minmax scaling
-    # avr_score = min_max_scaling(avr_score)
-    
+def sampling_method(sample_input, avr_score, number_loop, flag):
+    if flag == "20":
+        number_loop = 20
+        avr_score = avr_score_stander
+    if flag == "10":
+        number_loop = 10
+        avr_score = avr_score_stander
+    if flag == "wo":
+        number_loop = 10
+        avr_score = avr_score_wo_avr 
+
     length = len(sample_input["question"])
     length_ex = len(sample_input["explanation"][0])  # Size of explanations
 
@@ -55,7 +62,7 @@ def sampling_method(sample_input, avr_score):
         normalized_softmax = get_softmax(softmax_question)
         # print(normalized_softmax)
         choose_question_arr = []
-        for i in range(10):
+        for i in range(number_loop):
             choose_question = np.random.choice(a=range(length), p=normalized_softmax)
             choose_question_arr.append(choose_question)
         count_question = Counter(choose_question_arr)
@@ -68,7 +75,7 @@ def sampling_method(sample_input, avr_score):
         softmax_answer = divide_list_by_float(normalize_list(sample_input["answer_scores"][bgk]), temperature_score[bgk])
         normalized_softmax = get_softmax(softmax_answer)
         choose_answer_arr = []
-        for i in range(10):
+        for i in range(number_loop):
             choose_answer = np.random.choice(a=range(length), p=normalized_softmax)
             choose_answer_arr.append(choose_answer)
         count_answer = Counter(choose_answer_arr)
@@ -83,7 +90,7 @@ def sampling_method(sample_input, avr_score):
             softmax_explain = divide_list_by_float(normalize_list(sample_input["explanation_scores"][bgk][k]), temperature_score[bgk])
             normalized_softmax = get_softmax(softmax_explain)
             choose_explain_arr = []
-            for i in range(10):
+            for i in range(number_loop):
                 choose_explain = np.random.choice(a=range(len(sample_input["explanation"][0])), p=normalized_softmax)
                 choose_explain_arr.append(choose_explain)
             count_explain = Counter(choose_explain_arr)
