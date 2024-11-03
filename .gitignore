@@ -10,8 +10,6 @@ __MACOSX
 *.env
 
 # Ignore all files inside the data directory except for the "final" subdirectory
-data/*
-!data/final/
 data/vqax/*
 data/translation/*
 data/selection/*
