@@ -13,3 +13,7 @@ __MACOSX
 data/vqax/*
 data/translation/*
 data/selection/*
+
+# Ignore folder datasets
+src/models/datasets/*
+src/models/checkpoints/*
