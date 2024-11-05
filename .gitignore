@@ -13,3 +13,6 @@ __MACOSX
 data/vqax/*
 data/translation/*
 data/selection/*
+
+# Ignore all .jsonl files
+*.jsonl

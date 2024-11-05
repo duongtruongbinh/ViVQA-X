@@ -1,239 +1,101 @@
-# translation.py
-import json
-import os
-import argparse
-import regex as re
-import subprocess
+from typing import Callable, List
 import importlib
-from typing import Dict, Callable
-
-# Define requirements for each translator
-TRANSLATOR_REQUIREMENTS = {
-    "vinai": [],
-    "gemini": [],
-    "ggtrans": ["googletrans===3.1.0a0", "httpx==0.13.3"],
-    "gpt": ["openai"],
-}
+import os
+import re
+from .data_processor import DataProcessor
+from .utils import load_json, save_json, install_requirements
 
 
-def uninstall_packages(packages: list):
-    """Uninstall specified packages"""
-    for package in packages:
+class TranslationPhase:
+    """
+    A class to manage the translation phase of datasets using various translators.
+
+    Methods:
+        load_translator(translator: str) -> Callable: Dynamically imports and returns the translator function.
+        translate_and_save(file_path: str, translator: str): Translates a dataset file and saves the translated data.
+        run(): Runs the translation phase for all dataset files and translators.
+    """
+
+    def __init__(self, dataset_files: List[str], translations_dir: str, translators: List[str]):
+        """
+        Initializes the TranslationPhase with dataset files, output directory, and translators.
+
+        Args:
+            dataset_files (List[str]): List of dataset file paths.
+            translations_dir (str): Directory to save translated files.
+            translators (List[str]): List of translators to use.
+        """
+        self.dataset_files = dataset_files
+        self.translations_dir = translations_dir
+        self.translators = translators
+        self.required_packages = {
+            "gpt": ["openai", "httpx"],
+            "ggtrans": ["googletrans===3.1.0a0", "httpx===0.13.3"]
+        }
+
+    def load_translator(self, translator: str) -> Callable:
+        """
+        Dynamically imports and returns the translator function.
+
+        Args:
+            translator (str): The name of the translator.
+
+        Returns:
+            Callable: The translate_batch function of the translator.
+
+        Raises:
+            ValueError: If the translator module is not found
+        """
         try:
-            subprocess.check_call(
-                ["pip", "uninstall", "-y", package],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            print(f"Uninstalled {package}")
-        except subprocess.CalledProcessError as e:
-            print(f"Error uninstalling {package}: {str(e)}")
+            module_name = f"translation.translators.{translator}_translator"
+            class_name = f"{translator.capitalize()}Translator"
+            if translator in self.required_packages:
+                install_requirements(
+                    self.required_packages[translator], translator)
+            module = importlib.import_module(module_name)
+        except ModuleNotFoundError:
+            raise ValueError(f"Translator {translator} not found")
 
+        translator_class = getattr(module, class_name)
+        return translator_class().translate_batch
 
-def install_requirements(packages: list, source: str):
-    """Install required packages if not already installed"""
-    if source == "ggtrans":
-        # Uninstall specific packages before installing ggtrans requirements
-        uninstall_packages(["googletrans", "httpx"])
+    def translate_and_save(self, file_path: str, translator: str):
+        """
+        Translates a dataset file and saves the translated data.
 
-    for package in packages:
-        try:
-            importlib.import_module(package.split("==")[0])
-        except ImportError:
-            print(f"Installing {package}...")
-            try:
-                subprocess.check_call(
-                    ["pip", "install", package],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-                print(f"Installed {package}")
-            except subprocess.CalledProcessError as e:
-                print(f"Error installing {package}: {str(e)}")
+        Args:
+            file_path (str): The path to the dataset file.
+            translator (str): The name of the translator.
 
+        Raises:
+            ValueError: If the file name does not contain 'train', 'val', or 'test'.
+        """
+        data = load_json(file_path)
+        os.makedirs(self.translations_dir, exist_ok=True)
+        file_name = os.path.basename(file_path)
+        match = re.search(r"(train|val|test)", file_name)
 
-def load_translator(source: str) -> Callable:
-    """Dynamically import and return translator function"""
-    if source not in TRANSLATOR_REQUIREMENTS:
-        raise ValueError(f"Unknown translator source: {source}")
+        if not match:
+            raise ValueError(
+                f"File name {file_name} does not contain 'train', 'val', hoặc 'test'")
 
-    # Install required packages
-    install_requirements(TRANSLATOR_REQUIREMENTS[source], source)
-
-    # Import translator module
-    module = importlib.import_module(f"{source}_vqax")
-    return getattr(module, "translate_batch")
-
-
-def load_json(file_path: str) -> dict:
-    with open(file_path, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def save_json(data: dict, file_path: str):
-    with open(file_path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
-
-def translate_and_save(file_path: str, output_dir: str, source: str):
-    data = load_json(file_path)
-    os.makedirs(output_dir, exist_ok=True)
-    file_name = os.path.basename(file_path)
-    match = re.search(r"(train|val|test)", file_name)
-    if match:
         file_type = match.group(0)
-    else:
-        raise ValueError(
-            f"File name {file_name} does not contain 'train', 'val', or 'test'"
-        )
-    try:
-        translate_function = load_translator(source)
+        translate_function = self.load_translator(translator)
         translated_data = translate_function(data, file_type)
-
         output_file = os.path.join(
-            output_dir,
-            f"{os.path.splitext(file_name)[0]}_{source}.json",
-        )
+            self.translations_dir, f"{os.path.splitext(file_name)[0]}_{translator}.json")
         save_json(translated_data, output_file)
         print(f"Translated data saved to {output_file}")
 
-    except Exception as e:
-        print(f"Error with translator '{source}': {str(e)}")
+    def run(self):
+        """
+        Runs the translation phase for all dataset files and translators.
+        """
+        for dataset_file in self.dataset_files:
+            for translator in self.translators:
+                self.translate_and_save(dataset_file, translator)
 
-
-def check_data_integrity(
-    dataset_files: list, output_dir: str, translation_sources: list
-):
-    def check_item_integrity(item, translated_item):
-        errors = []
-        question_key = f"question_vi"
-        answer_key = f"answer_vi"
-        explanation_key = f"explanation_vi"
-
-        if not translated_item.get(question_key):
-            errors.append(f"Missing {question_key}")
-        if not translated_item.get(answer_key):
-            errors.append(f"Missing {answer_key}")
-        if explanation_key not in translated_item:
-            errors.append(f"Missing {explanation_key}")
-        elif not translated_item[explanation_key]:
-            errors.append(f"Empty {explanation_key}")
-        elif len(translated_item[explanation_key]) != len(item["explanation"]):
-            errors.append(f"Mismatch in number of explanations for {explanation_key}")
-        elif any(not exp for exp in translated_item[explanation_key]):
-            errors.append(f"Empty explanation in {explanation_key}")
-
-        return errors
-
-    for dataset_file in dataset_files:
-        print(f"Checking integrity for {dataset_file} dataset...")
-        original_data = load_json(dataset_file)
-        error_items = {}
-
-        for source in translation_sources:
-            translation_file = os.path.join(
-                output_dir,
-                f"{os.path.splitext(os.path.basename(dataset_file))[0]}_{source}.json",
-            )
-            if not os.path.exists(translation_file):
-                print(
-                    f"Warning: {translation_file} not found. Skipping this translation source."
-                )
-                continue
-
-            translated_data = load_json(translation_file)
-            for key, item in original_data.items():
-                if key not in translated_data:
-                    error_items[key] = [f"Missing translation for key {key}"]
-                else:
-                    item_errors = check_item_integrity(item, translated_data[key])
-                    if item_errors:
-                        error_items[key] = item_errors
-
-        # Save error items
-        error_file = os.path.join(
-            output_dir,
-            f"{os.path.splitext(os.path.basename(dataset_file))[0]}_errors.json",
-        )
-        with open(error_file, "w", encoding="utf-8") as f:
-            json.dump(error_items, f, ensure_ascii=False, indent=2)
-
-        print(f"Total items: {len(original_data)}")
-        print(f"Items with errors: {len(error_items)}")
-        print("\n")
-
-
-def merge_translations(dataset_files: list, output_dir: str, translation_sources: list):
-    for dataset_file in dataset_files:
-        print(f"Processing {dataset_file} dataset...")
-        original_data = load_json(dataset_file)
-        translations = {}
-
-        for source in translation_sources:
-            translation_file = os.path.join(
-                output_dir,
-                f"{os.path.splitext(os.path.basename(dataset_file))[0]}_{source}.json",
-            )
-            if os.path.exists(translation_file):
-                translations[source] = load_json(translation_file)
-            else:
-                print(
-                    f"Warning: {translation_file} not found. Skipping this translation source."
-                )
-
-        merged_data = {}
-        for key, item in original_data.items():
-            merged_item = item.copy()
-            for source, translation in translations.items():
-                if key in translation:
-                    translated_item = translation[key]
-                    merged_item[f"question_vi_{source}"] = translated_item[
-                        "question_vi"
-                    ]
-                    merged_item[f"answer_vi_{source}"] = translated_item["answer_vi"]
-                    merged_item[f"explanation_vi_{source}"] = translated_item[
-                        "explanation_vi"
-                    ]
-            merged_data[key] = merged_item
-
-        output_file = os.path.join(
-            output_dir,
-            f"{os.path.splitext(os.path.basename(dataset_file))[0]}_translated.json",
-        )
-        save_json(merged_data, output_file)
-        print(f"Merged data saved to {output_file}")
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Translate datasets using multiple translation models."
-    )
-    parser.add_argument(
-        "dataset_files", nargs="+", help="Paths to the dataset files to be translated."
-    )
-    parser.add_argument(
-        "--output_dir",
-        default="../../../data/translation",
-        help="Directory to save translated datasets.",
-    )
-    parser.add_argument(
-        "--sources",
-        nargs="+",
-        default=["vinai", "gemini", "ggtrans", "gpt"],
-        choices=list(TRANSLATOR_REQUIREMENTS.keys()),
-        help="List of translation sources to use.",
-    )
-
-    args = parser.parse_args()
-    os.makedirs(args.output_dir, exist_ok=True)
-
-    for dataset_file in args.dataset_files:
-        for source in args.sources:
-            translate_and_save(dataset_file, args.output_dir, source)
-
-    check_data_integrity(
-        args.dataset_files, args.output_dir, list(TRANSLATOR_REQUIREMENTS.keys())
-    )
-    merge_translations(
-        args.dataset_files, args.output_dir, list(TRANSLATOR_REQUIREMENTS.keys())
-    )
+        processor = DataProcessor(
+            self.dataset_files, self.translations_dir, self.translators)
+        processor.check_data_integrity()
+        processor.merge_translations()

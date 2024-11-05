@@ -84,8 +84,8 @@ def prepare_batch_input_files(input_file, dataset_name, batch_size=1500):
                     "question_scores": [score_for_translation_1, score_for_translation_2, ...],
                     "answer_scores": [score_for_translation_1, score_for_translation_2, ...],
                     "explanation_scores": [
-                        [score for translations of explanation 1],
-                        [score for translations of explanation 2], (if has more than 1 explanation)
+                        [scores for translations of explanation 1],
+                        [scores for translations of explanation 2], (if has more than 1 explanation)
                         ...
                     ] (length of explanation_scores must match the number of explanations, example: n explanations -> n lists of scores in explanation_scores)
                 }}
