@@ -8,8 +8,9 @@ import os
 from pathlib import Path
 import yaml
 from typing import Dict, Tuple
+import argparse
 
-from models.vivqax_model import ViVQAX_Model
+from baseline.vivqax_model import ViVQAX_Model
 from metrics.metrics import VQAXEvaluator
 from dataloader.dataloader import get_dataloaders
 
@@ -228,11 +229,11 @@ class VQAXTrainer:
             # Training phase
             train_metrics = self.train_epoch(epoch)
             print(train_metrics)
-            
+
             # Validation phase
             val_metrics = self.validate()
             print(val_metrics)
-            
+
             # Update learning rate
             self.scheduler.step(val_metrics['loss'])
 
@@ -268,10 +269,112 @@ def release_memory(trainer):
     gc.collect()
 
 
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Train ViVQA-X model')
+
+    # Model arguments
+    parser.add_argument('--config', type=str, default='./config/config.yaml',
+                        help='Path to config file')
+    parser.add_argument('--device', type=str, default="cuda:2",
+                        help='Device to use (cuda/cpu)')
+    parser.add_argument('--embed_size', type=int, default=400,
+                        help='Embedding size')
+    parser.add_argument('--hidden_size', type=int, default=2048,
+                        help='Hidden size')
+    parser.add_argument('--num_layers', type=int, default=2,
+                        help='Number of layers')
+    parser.add_argument('--max_explanation_length', type=int, default=15,
+                        help='Maximum explanation length')
+
+    # Training arguments
+    parser.add_argument('--lr', type=float, default=0.0001,
+                        help='Learning rate')
+    parser.add_argument('--num_epochs', type=int, default=10,
+                        help='Number of epochs')
+    parser.add_argument('--batch_size', type=int, default=128,
+                        help='Batch size for training')
+    parser.add_argument('--num_workers', type=int, default=4,
+                        help='Number of workers for data loading')
+    parser.add_argument('--save_dir', type=str, default="./ViCLEVR-X/weights",
+                        help='Directory to save model')
+    parser.add_argument('--seed', type=int, default=0,
+                        help='Random seed')
+
+    # Dataset paths
+    parser.add_argument('--train_path', type=str,
+                        default="/home/VLAI/minhth/ViCLEVR-X/datasets/ViVQA-X/vivqaX_train.json",
+                        help='Path to training data file')
+    parser.add_argument('--val_path', type=str,
+                        default="/home/VLAI/minhth/ViCLEVR-X/datasets/ViVQA-X/vivqaX_val.json",
+                        help='Path to validation data file')
+    parser.add_argument('--test_path', type=str,
+                        default="/home/VLAI/minhth/ViCLEVR-X/datasets/ViVQA-X/vivqaX_test.json",
+                        help='Path to test data file')
+
+    # Image directories
+    parser.add_argument('--train_image_dir', type=str,
+                        default='/home/VLAI/datasets/COCO_Images/train2014',
+                        help='Path to training images directory')
+    parser.add_argument('--val_image_dir', type=str,
+                        default='/home/VLAI/datasets/COCO_Images/val2014',
+                        help='Path to validation images directory')
+    parser.add_argument('--test_image_dir', type=str,
+                        default='/home/VLAI/datasets/COCO_Images/val2014',
+                        help='Path to test images directory')
+
+    return parser.parse_args()
+
+
 def main():
+    # Parse arguments
+    args = parse_args()
+
     # Load config
-    with open('./ViCLEVR-X/config/config.yaml', 'r') as f:
+    with open(args.config, 'r') as f:
         config = yaml.safe_load(f)
+
+    # Override model config
+    if args.device:
+        config['model']['device'] = args.device
+    if args.embed_size:
+        config['model']['embed_size'] = args.embed_size
+    if args.hidden_size:
+        config['model']['hidden_size'] = args.hidden_size
+    if args.num_layers:
+        config['model']['num_layers'] = args.num_layers
+    if args.max_explanation_length:
+        config['model']['max_explanation_length'] = args.max_explanation_length
+
+    # Override training config
+    if args.lr:
+        config['training']['learning_rate'] = args.lr
+    if args.num_epochs:
+        config['training']['num_epochs'] = args.num_epochs
+    if args.batch_size:
+        config['training']['batch_size'] = args.batch_size
+    if args.num_workers:
+        config['training']['num_workers'] = args.num_workers
+    if args.save_dir:
+        config['training']['save_dir'] = args.save_dir
+    if args.seed:
+        config['training']['seed'] = args.seed
+
+    # Override data paths
+    if args.train_path:
+        config['data']['train_path'] = args.train_path
+    if args.val_path:
+        config['data']['val_path'] = args.val_path
+    if args.test_path:
+        config['data']['test_path'] = args.test_path
+
+    # Override image directories
+    if args.train_image_dir:
+        config['data']['train_image_dir'] = args.train_image_dir
+    if args.val_image_dir:
+        config['data']['val_image_dir'] = args.val_image_dir
+    if args.test_image_dir:
+        config['data']['test_image_dir'] = args.test_image_dir
 
     # Set random seed
     torch.manual_seed(config['training']['seed'])
