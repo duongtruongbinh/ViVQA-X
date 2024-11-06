@@ -4,7 +4,6 @@ from tqdm import tqdm
 import re
 from typing import List, Dict, Any
 from .base_translator import BaseTranslator
-from .utils import set_seed, get_most_common_answer
 
 
 class VinaiTranslator(BaseTranslator):
@@ -22,7 +21,7 @@ class VinaiTranslator(BaseTranslator):
         self.device = torch.device("cuda")
         self.model_en2vi.to(self.device)
         self.model_en2vi.eval()
-        set_seed()
+        self.set_seed()
 
     def translate_en2vi(self, en_texts: List[str]) -> List[str]:
         """
@@ -93,13 +92,13 @@ class VinaiTranslator(BaseTranslator):
                 result["explanation"] = [answer_parts[1].strip()]
         return result
 
-    def translate_batch(self, data: Dict[str, Dict[str, Any]], file_type: str) -> Dict[str, Dict[str, Any]]:
+    def translate_batch(self, data: Dict[str, Dict[str, Any]], file_name: str) -> Dict[str, Dict[str, Any]]:
         """
         Translate a batch of data.
 
         Args:
             data (Dict[str, Dict[str, Any]]): The data to translate.
-            file_type (str): The type of the file.
+            file_name (str): The name of the file being translated.
 
         Returns:
             Dict[str, Dict[str, Any]]: The translated data.
@@ -109,7 +108,7 @@ class VinaiTranslator(BaseTranslator):
         dataset_items = list(data.items())
         for i in tqdm(
             range(0, len(dataset_items), batch_size),
-            desc=f"Translating {file_type} dataset with VinAI",
+            desc=f"Translating {file_name} with VinAI",
         ):
             batch = dataset_items[i: i + batch_size]
             # Prepare texts for translation
@@ -117,7 +116,8 @@ class VinaiTranslator(BaseTranslator):
             explanation_texts = []
             for key, item in batch:
                 question = item["question"]
-                most_common_answer = get_most_common_answer(item["answers"])
+                most_common_answer = self.get_most_common_answer(
+                    item["answers"])
                 qa_text = f"Question: {question} Answer: {most_common_answer}"
                 qa_texts.append(qa_text)
                 for explanation in item["explanation"]:

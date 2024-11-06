@@ -1,7 +1,5 @@
 import json
-import os
 import subprocess
-import importlib
 from typing import List
 
 
@@ -27,13 +25,12 @@ def uninstall_packages(packages: List[str]):
             print(f"Error uninstalling {package}: {str(e)}")
 
 
-def install_requirements(packages: List[str], translator: str):
+def install_requirements(packages: List[str]):
     """
     Install required packages if not already installed.
 
     Args:
         packages (List[str]): A list of package names to install.
-        translator (str): The name of the translator to use.
 
     Returns:
         None

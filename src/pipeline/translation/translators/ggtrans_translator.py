@@ -5,7 +5,6 @@ import sys
 import time
 import random
 from .base_translator import BaseTranslator
-from .utils import get_most_common_answer
 
 
 class GgtransTranslator(BaseTranslator):
@@ -55,7 +54,7 @@ class GgtransTranslator(BaseTranslator):
             translator, item["question"]
         )
 
-        most_common_answer = get_most_common_answer(item["answers"])
+        most_common_answer = self.get_most_common_answer(item["answers"])
         translated_item["answer_vi_ggtrans"] = self.safe_translate(
             translator, most_common_answer
         )
@@ -71,11 +70,12 @@ class GgtransTranslator(BaseTranslator):
         time.sleep(random.uniform(1, 3))
         return translated_item
 
-    def translate_chunk(self, chunk: Dict[str, Dict[str, Any]], chunk_index: int) -> Dict[str, Dict[str, Any]]:
+    def translate_chunk(self, file_name: str, chunk: Dict[str, Dict[str, Any]], chunk_index: int) -> Dict[str, Dict[str, Any]]:
         """
         Translate a chunk of items.
 
         Args:
+            file_name (str): The name of the file being translated.
             chunk (Dict[str, Dict[str, Any]]): The chunk of items to translate.
             chunk_index (int): The index of the chunk.
 
@@ -86,18 +86,18 @@ class GgtransTranslator(BaseTranslator):
         for i, (key, item) in enumerate(chunk.items()):
             translated_chunk[key] = self.translate_item(item)
             sys.stdout.write(
-                f"\rChunk {chunk_index}: {i+1}/{len(chunk)} ({(i+1)/len(chunk)*100:.2f}%)"
+                f"\r{file_name} Chunk {chunk_index}: {i+1}/{len(chunk)} ({(i+1)/len(chunk)*100:.2f}%)"
             )
             sys.stdout.flush()
         return translated_chunk
 
-    def translate_batch(self, data: Dict[str, Dict[str, Any]], file_type: str, num_threads: int = 20) -> Dict[str, Dict[str, Any]]:
+    def translate_batch(self, data: Dict[str, Dict[str, Any]], file_name: str, num_threads: int = 20) -> Dict[str, Dict[str, Any]]:
         """
         Translate a batch of data using multiple threads.
 
         Args:
             data (Dict[str, Dict[str, Any]]): The data to translate.
-            file_type (str): The type of the file.
+            file_name (str): The name of the file being translated.
             num_threads (int): The number of threads to use. Default is 20.
 
         Returns:
@@ -110,11 +110,12 @@ class GgtransTranslator(BaseTranslator):
             dict(list(data.items())[i: i + chunk_size])
             for i in range(0, total_items, chunk_size)
         ]
-
+        print(
+            f"Translating {file_name} with GGTrans using {num_threads} threads...")
         translated_data = {}
         with ThreadPoolExecutor(max_workers=num_threads) as executor:
             future_to_chunk = {
-                executor.submit(self.translate_chunk, chunk, i): i
+                executor.submit(self.translate_chunk, file_name, chunk, i): i
                 for i, chunk in enumerate(chunks)
             }
 

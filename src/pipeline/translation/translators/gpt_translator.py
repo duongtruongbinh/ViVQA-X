@@ -6,7 +6,6 @@ from dotenv import load_dotenv
 from tqdm import tqdm
 from typing import Dict, List, Tuple, Optional
 from .base_translator import BaseTranslator
-from .utils import get_most_common_answer
 load_dotenv()
 
 
@@ -29,7 +28,7 @@ class GptTranslator(BaseTranslator):
         """
         with open(batch_file, "w") as out_f:
             for key, value in data.items():
-                common_answer = get_most_common_answer(value["answers"])
+                common_answer = self.get_most_common_answer(value["answers"])
                 messages = [
                     {
                         "role": "system",
@@ -108,21 +107,21 @@ class GptTranslator(BaseTranslator):
             print(f"Error downloading results: {e}")
             return None
 
-    def translate_batch(self, data: Dict[str, Dict], file_type: str) -> Dict[str, Dict]:
+    def translate_batch(self, data: Dict[str, Dict], file_name: str) -> Dict[str, Dict]:
         """
         Main translation function that processes the entire dataset.
 
         Args:
             data (Dict[str, Dict]): The dataset to be translated.
-            file_type (str): The type of the file (e.g., 'train', 'val', 'test').
+            file_name (str): The name of the file being translated.
 
         Returns:
             Dict[str, Dict]: The translated dataset.
         """
         translated_dataset = {}
-
+        print(f"Translating {file_name} with GPT-4o-mini")
         # Create temporary batch file
-        batch_file = f"{file_type}_gpt_batch.jsonl"
+        batch_file = f"{file_name}_gpt_batch.jsonl"
         self.prepare_batch_file(data, batch_file)
 
         # Process batch
@@ -138,7 +137,7 @@ class GptTranslator(BaseTranslator):
             return translated_dataset
 
         # Parse results
-        for result in tqdm(results, desc=f"Processing {file_type} dataset with GPT"):
+        for result in tqdm(results, desc=f"Parsing translations for {file_name}"):
             try:
                 key = result["custom_id"]
                 content = result["response"]["body"]["choices"][0]["message"]["content"]

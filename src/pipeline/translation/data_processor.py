@@ -11,21 +11,21 @@ class DataProcessor:
     Attributes:
         dataset_files (List[str]): List of dataset file paths.
         output_dir (str): Directory to save processed files.
-        translation_sources (List[str]): List of translation sources.
+        translators (List[str]): List of translation sources.
     """
 
-    def __init__(self, dataset_files: List[str], output_dir: str, translation_sources: List[str]):
+    def __init__(self, dataset_files: List[str], output_dir: str, translators: List[str]):
         """
         Initializes the DataProcessor with dataset files, output directory, and translation sources.
 
         Args:
             dataset_files (List[str]): List of dataset file paths.
             output_dir (str): Directory to save processed files.
-            translation_sources (List[str]): List of translation sources.
+            translators (List[str]): List of translation sources.
         """
         self.dataset_files = dataset_files
         self.output_dir = output_dir
-        self.translation_sources = translation_sources
+        self.translators = translators
 
     def check_item_integrity(self, item: Dict, translated_item: Dict) -> List[str]:
         """
@@ -68,9 +68,9 @@ class DataProcessor:
             original_data = load_json(dataset_file)
             error_items = {}
             file_name = os.path.splitext(os.path.basename(dataset_file))[0]
-            for source in self.translation_sources:
+            for translator in self.translators:
                 translation_file = os.path.join(
-                    self.output_dir, f"{file_name}_{source}.json"
+                    self.output_dir, f"{file_name}_{translator}.json"
                 )
                 if not os.path.exists(translation_file):
                     print(
@@ -96,30 +96,34 @@ class DataProcessor:
 
     def merge_translations(self) -> None:
         """
-        Merges translations from different sources for all dataset files.
+        Merges translations from different translators for all dataset files.
         """
         for dataset_file in self.dataset_files:
             print(f"Processing {dataset_file} dataset...")
             original_data = load_json(dataset_file)
+
+            # Load translations from all translators
             translations = {}
             file_name = os.path.splitext(os.path.basename(dataset_file))[0]
-            for source in self.translation_sources:
+            for translator in self.translators:
                 translation_file = os.path.join(
-                    self.output_dir, f"{file_name}_{source}.json")
+                    self.output_dir, f"{file_name}_{translator}.json")
                 if os.path.exists(translation_file):
-                    translations[source] = load_json(translation_file)
+                    translations[translator] = load_json(translation_file)
                 else:
                     print(
-                        f"Warning: {translation_file} not found. Skipping this source.")
+                        f"Warning: {translation_file} not found. Skipping this translator.")
+
+            # Merge translations
             merged_data = {}
             for key, item in original_data.items():
                 merged_item = item.copy()
-                for source, translation in translations.items():
+                for translator, translation in translations.items():
                     if key in translation:
                         translated_item = translation[key]
-                        merged_item[f"question_vi_{source}"] = translated_item["question_vi"]
-                        merged_item[f"answer_vi_{source}"] = translated_item["answer_vi"]
-                        merged_item[f"explanation_vi_{source}"] = translated_item["explanation_vi"]
+                        merged_item[f"question_vi_{translator}"] = translated_item["question_vi"]
+                        merged_item[f"answer_vi_{translator}"] = translated_item["answer_vi"]
+                        merged_item[f"explanation_vi_{translator}"] = translated_item["explanation_vi"]
                 merged_data[key] = merged_item
             output_file = os.path.join(
                 self.output_dir, f"{file_name}_translated.json")

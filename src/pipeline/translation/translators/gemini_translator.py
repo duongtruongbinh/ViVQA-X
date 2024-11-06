@@ -7,7 +7,6 @@ from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from dotenv import load_dotenv
 from tqdm import tqdm
 from .base_translator import BaseTranslator
-from .utils import get_most_common_answer
 load_dotenv()
 
 
@@ -105,13 +104,13 @@ class GeminiTranslator(BaseTranslator):
             print(f"Error during translation: {e}")
             return None
 
-    def translate_batch(self, data: Dict[str, Dict[str, Any]], file_type: str) -> Dict[str, Dict[str, Any]]:
+    def translate_batch(self, data: Dict[str, Dict[str, Any]], file_name: str) -> Dict[str, Dict[str, Any]]:
         """
         Translate a batch of data.
 
         Args:
             data (Dict[str, Dict[str, Any]]): The data to translate.
-            file_type (str): The type of the file.
+            file_name (str): The name of the file being translated.
 
         Returns:
             Dict[str, Dict[str, Any]]: The translated data.
@@ -121,13 +120,13 @@ class GeminiTranslator(BaseTranslator):
         keys = list(data.keys())
         for i in tqdm(
             range(0, len(keys), batch_size),
-            desc=f"Translating {file_type} dataset with Gemini",
+            desc=f"Translating {file_name} with Gemini",
         ):
             batch_keys = keys[i: i + batch_size]
             batch_samples = [
                 {
                     "question": data[key]["question"],
-                    "answer": get_most_common_answer(data[key]["answers"]),
+                    "answer": self.get_most_common_answer(data[key]["answers"]),
                     "explanation": data[key]["explanation"],
                 }
                 for key in batch_keys
