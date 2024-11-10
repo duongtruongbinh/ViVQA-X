@@ -291,7 +291,7 @@ class GptEvaluator(BaseEvaluator):
         # Clean up batch files
         for batch_file in os.listdir(self.batch_dir):
             os.remove(os.path.join(self.batch_dir, batch_file))
-            
+        os.rmdir(self.batch_dir)
         return all_results
 
     @property

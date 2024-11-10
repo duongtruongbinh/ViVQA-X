@@ -1,20 +1,24 @@
-from typing import Dict, List
+from typing import Any, Dict, List
 from translation.translation import TranslationPhase
 from selection.selection import SelectionPhase
-# from post_processing.post_processing import PostProcessingPhase
+from post_processing.post_processing import PostProcessingPhase
+import os
 import argparse
 from dotenv import load_dotenv
 load_dotenv()
 
 
 class PipelineManager:
+    """
+    Class to manage the entire automated pipeline.
+    """
     def __init__(
-        self, translation_args: Dict[str, List[str]], selection_args: Dict[str, List[str]], post_processing_args: Dict[str, str]
+        self, translation_args: Dict[str, Any], selection_args: Dict[str, Any], post_processing_args: Dict[str, Any]
     ):
         self.translation_phase = TranslationPhase(**translation_args)
         self.selection_phase = SelectionPhase(**selection_args)
-        # self.post_processing_phase = PostProcessingPhase(
-        #     **post_processing_args)
+        self.post_processing_phase = PostProcessingPhase(
+            **post_processing_args)
 
     def run(self, only_translation=False, only_selection=False, only_post_processing=False):
         if only_translation:
@@ -23,12 +27,12 @@ class PipelineManager:
             self.selection_phase.run()
             pass
         elif only_post_processing:
-            # self.post_processing_phase.run()
-            pass
+            self.post_processing_phase.run()
         else:
             self.translation_phase.run()
             self.selection_phase.run()
-            # self.post_processing_phase.run()
+            self.post_processing_phase.run()
+            print("Pipeline completed successfully.")
 
 
 def main():
@@ -59,22 +63,28 @@ def main():
 
     args = parser.parse_args()
 
-    translation_args: Dict[str, List[str]] = {
+     # Check for conflicting arguments
+    phases = [args.only_translation, args.only_selection, args.only_post_processing]
+    if sum(phases) > 1:
+        parser.error("Only one of --only_translation, --only_selection, or --only_post_processing can be used at a time.")
+        
+    translation_args: Dict[str, Any] = {
         "dataset_files": args.input_files,
         "translations_dir": args.translations_dir,
         "translators": args.translators,
     }
 
-    selection_args: Dict[str, List[str]] = {
+    selection_args: Dict[str, Any] = {
         "evaluators": args.evaluators,
         "translators": args.translators,
         "translations_dir": args.translations_dir,
         "selection_dir": args.selection_dir,
     }
 
-    post_processing_args: Dict[str, str] = {
-        "selection_dir": args.selection_dir,
+    post_processing_args: Dict[str, Any] = {
+        "sampling_dir": os.path.join(args.selection_dir, "sampling_voting"),
         "output_dir": args.output_dir,
+        "original_files": args.input_files,
         "model_name": args.model_name,
     }
 
