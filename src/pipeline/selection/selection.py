@@ -172,7 +172,19 @@ class SelectionPhase:
                 merged_data[question_id]["explanation_scores"][model_name] = entry["explanation_scores"]
         return list(merged_data.values())
 
-    def run_sampling(self, scores, temperature, n_samples=20, temperature_scaling=True):
+    def run_sampling(self, scores: List[int], temperature: float, n_samples: int = 20, temperature_scaling: bool = True) -> int:
+        """
+        Samples indices based on the provided scores and temperature.
+
+        Args:
+            scores (List[int]): The scores to sample from.
+            temperature (float): The temperature for scaling the scores.
+            n_samples (int, optional): The number of samples to draw. Defaults to 20.
+            temperature_scaling (bool, optional): Whether to apply temperature scaling. Defaults to True.
+
+        Returns:
+            int: The most common sampled index.
+        """
         if temperature_scaling:
             softmax_scores = softmax(np.array(scores) / temperature)
         else:
@@ -182,6 +194,9 @@ class SelectionPhase:
         return most_common
 
     def run_voting(self) -> None:
+        """
+        Runs the voting process on the translated files.
+        """
         for file in self.translated_files:
             scoring_file = file.replace('_translated.json', '_evaluation.json')
             scoring_data = load_json(os.path.join(self.scoring_dir, scoring_file))
@@ -190,13 +205,22 @@ class SelectionPhase:
             result_data = {}
             temperature_score = {key: round(1 - value, 2) for key, value in avr_scores.items()}
 
-            def get_highest_voted_index_with_tiebreak(votes, store_avg_scores):
+            def get_highest_voted_index_with_tiebreak(votes: List[int], store_avg_scores: List[float]) -> int:
+                """
+                Gets the index with the highest votes, breaking ties with average scores.
+
+                Args:
+                    votes (List[int]): The list of votes.
+                    store_avg_scores (List[float]): The list of average scores.
+
+                Returns:
+                    int: The index with the highest votes or highest average score in case of a tie.
+                """
                 max_votes = max(votes)
                 candidates = [index for index, vote in enumerate(votes) if vote == max_votes]
                 
                 if len(candidates) == 1:
                     return candidates[0]
-                # In case of tie, choose the one with the highest avg score 
                 scores = [store_avg_scores[i] for i in candidates]
                 return candidates[scores.index(max(scores))]
             

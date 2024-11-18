@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# Check if CUDA_VISIBLE_DEVICES is set, if not, set it to default value
-if [ -z "$CUDA_VISIBLE_DEVICES" ]; then
-  export CUDA_VISIBLE_DEVICES=2
-fi
-
 # Define input and output directories
 INPUT_DIR="../../data/vqax"
 OUTPUT_DIR="../../data/vivqax"
