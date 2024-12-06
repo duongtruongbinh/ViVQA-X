@@ -12,6 +12,7 @@ class PipelineManager:
     """
     Class to manage the entire automated pipeline.
     """
+
     def __init__(
         self, translation_args: Dict[str, Any], selection_args: Dict[str, Any], post_processing_args: Dict[str, Any]
     ):
@@ -39,6 +40,8 @@ def main():
     parser = argparse.ArgumentParser(
         description="Run the entire automated pipeline or specific phases.")
     parser.add_argument("--input_files", nargs="+", required=True, type=str,
+                        default=["../../data/vqax/vqaX_train.json",
+                                 "../../data/vqax/vqaX_val.json", "../../data/vqax/vqaX_test.json"],
                         help="Paths to the dataset files to be translated.")
     parser.add_argument("--evaluators", nargs="+", default=["llama", "gemma", "phi", "qwen", "gpt"], type=str,
                         help="LLMs to use for scoring the translations.")
@@ -63,11 +66,13 @@ def main():
 
     args = parser.parse_args()
 
-     # Check for conflicting arguments
-    phases = [args.only_translation, args.only_selection, args.only_post_processing]
+    # Check for conflicting arguments
+    phases = [args.only_translation,
+              args.only_selection, args.only_post_processing]
     if sum(phases) > 1:
-        parser.error("Only one of --only_translation, --only_selection, or --only_post_processing can be used at a time.")
-        
+        parser.error(
+            "Only one of --only_translation, --only_selection, or --only_post_processing can be used at a time.")
+
     translation_args: Dict[str, Any] = {
         "dataset_files": args.input_files,
         "translations_dir": args.translations_dir,
