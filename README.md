@@ -63,7 +63,15 @@ bash scripts/pipeline.sh
 
 ### Benchmark
 
-To evaluate the performance of baselines on the ViVQA-X dataset, run the following command:
+We assess the performance of several models on the ViVQA-X dataset, including:
+
+- Heuristic Model
+- LSTM-Generative
+- [NLX-GPT](https://github.com/fawazsammani/nlxgpt)
+- [OFA-X](https://github.com/ofa-x/OFA-X)
+- [ReRe](https://github.com/yeonsue/ReRe)
+
+For the models NLX-GPT, OFA-X, and ReRe, please refer to their respective repositories for detailed evaluation instructions on the ViVQA-X dataset. For the Heuristic Model and LSTM-Generative, follow these steps:
 
 1. Run the training script:
 
