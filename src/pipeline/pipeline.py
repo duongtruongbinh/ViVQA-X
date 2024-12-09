@@ -40,19 +40,19 @@ def main():
     parser = argparse.ArgumentParser(
         description="Run the entire automated pipeline or specific phases.")
     parser.add_argument("--input_files", nargs="+", required=True, type=str,
-                        default=["../../data/vqax/vqaX_train.json",
-                                 "../../data/vqax/vqaX_val.json", "../../data/vqax/vqaX_test.json"],
+                        default=["data/vqax/vqaX_train.json",
+                                 "data/vqax/vqaX_val.json", "data/vqax/vqaX_test.json"],
                         help="Paths to the dataset files to be translated.")
     parser.add_argument("--evaluators", nargs="+", default=["llama", "gemma", "phi", "qwen", "gpt"], type=str,
                         help="LLMs to use for scoring the translations.")
     parser.add_argument("--translators", nargs="+", default=[
                         "ggtrans", "gemini", "vinai", "gpt"], type=str, help="List of translation sources to use.")
 
-    parser.add_argument("--translations_dir", default="../../data/translation", type=str,
+    parser.add_argument("--translations_dir", default="data/translation", type=str,
                         help="Directory to save files in the translation phase.")
-    parser.add_argument("--selection_dir", default="../../data/selection", type=str,
+    parser.add_argument("--selection_dir", default="data/selection", type=str,
                         help="Directory to save files in the selection phase.")
-    parser.add_argument("--output_dir", default="../../data/final", type=str,
+    parser.add_argument("--output_dir", default="data/final", type=str,
                         help="Directory to save final output files.")
     parser.add_argument("--model_name", default="dslim/bert-base-NER-uncased", type=str,
                         help="Model name for post-processing.")
