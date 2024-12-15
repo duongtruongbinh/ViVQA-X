@@ -1,121 +1,126 @@
-# An Automated Pipeline for Constructing a Vietnamese VQA-NLE Dataset
+# ViVQA-X Models
 
-This repository contains the code and resources for the paper "An Automated Pipeline for Constructing a Vietnamese VQA-NLE Dataset".
+This repository contains two different models for the ViVQA-X task:
+1. Baseline Model - A deep learning based approach
+2. Heuristic Model - A rule-based approach
 
-## Table of Contents
-
-- [Introduction](#introduction)
-- [Dataset](#dataset)
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Pipeline](#pipeline)
-  - [Benchmark](#benchmark)
-- [Directory Structure](#directory-structure)
-
-## Introduction
-
-This project provides an automated pipeline for constructing a Vietnamese Visual Question Answering with Natural Language Explanations (VQA-NLE) dataset. The dataset includes images, questions, answers, and explanations in Vietnamese, facilitating research in the field of VQA and NLE.
-
-## Dataset
-
-The dataset is organized into several JSON files located in the `data/final` directory. Each file contains a collection of questions, answers, and explanations associated with images from the COCO dataset.
-
-You can also access the dataset on Hugging Face: [ViVQA-X Dataset on Hugging Face](https://huggingface.co/datasets/duongtruongbinh/ViVQA-X)
-
-## Installation
-
-To set up the environment and install the required dependencies, follow these steps:
-
-1. Clone the repository:
-
-   ```sh
-   git clone https://github.com/duongtruongbinh/ViVQA-X.git
-   cd ViVQA-X
-   ```
-
-2. Create a virtual environment and activate it:
-
-   ```sh
-   conda create -n vivqa-x_env
-   conda activate vivqa-x_env
-   ```
-
-3. Install the required packages:
-
-   ```sh
-   pip install -r requirements.txt
-   ```
-
-4. Download the dataset:
-   ```sh
-   bash scripts/download_vqax.sh
-   ```
-
-## Usage
-
-### Pipeline
-
-To run the pipeline, execute the following command:
-
-```sh
-bash scripts/pipeline.sh
-```
-
-### Benchmark
-
-We assess the performance of several models on the ViVQA-X dataset, including:
-
-- Heuristic Model
-- LSTM-Generative
-- [NLX-GPT](https://github.com/fawazsammani/nlxgpt)
-- [OFA-X](https://github.com/ofa-x/OFA-X)
-- [ReRe](https://github.com/yeonsue/ReRe)
-
-For the models NLX-GPT, OFA-X, and ReRe, please refer to their respective repositories for detailed evaluation instructions on the ViVQA-X dataset. For the Heuristic Model and LSTM-Generative, follow these steps:
-
-1. Run the training script:
-
-   ```sh
-   bash scripts/train.sh
-   ```
-
-2. Run the evaluation script:
-
-   ```sh
-   bash scripts/evaluate.sh
-   ```
-
-## Directory Structure
-
-The directory structure of the project is as follows:
+## Project Structure
 
 ```
-.
-├── data/
-│   ├── vqax
-│   ├── translation
-│   ├── selection
-│   └── final
-├── notebooks/
-├── scripts/
-│   ├── download_vqax.sh
-│   ├── pipeline.sh
-│   ├── train.sh
-│   └── evaluate.sh
-├── src/
-│   ├── models/
-│   ├── pipeline/
-│   │   ├── translation/
-│   │   ├── selection/
-│   │   ├── post_processing/
-│   │   └── pipeline.py
-├── requirements.txt
-└── README.md
-
+src/models/
+├── baseline_model/
+│   ├── vivqax_model.py    # Main model implementation
+│   ├── train.py           # Training script
+│   ├── evaluate.py        # Evaluation script
+│   └── config -> ../config    # Symlink to shared config
+├── heuristic_model/
+│   ├── heuristic_baseline.py  # Heuristic model implementation
+│   ├── run_heuristic.py       # Script to run heuristic model
+│   └── config -> ../config    # Symlink to shared config
+├── config/                # Shared configuration
+├── dataloader/           # Shared data loading utilities
+├── metrics/              # Shared evaluation metrics
+└── utils/                # Shared utility functions
 ```
 
-## Citation
+## Prerequisites
 
+1. Install the required dependencies:
+```bash
+pip install -r requirements.txt
 ```
 
+2. Prepare your data according to the configuration in `src/models/config/config.yaml`
+
+## Running the Baseline Model
+
+The baseline model is a deep learning based approach that requires training.
+
+### Training
+
+To train the baseline model:
+
+```bash
+cd src/models/baseline_model
+python train.py [arguments]
 ```
+
+Available arguments:
+- `--config`: Path to config file (default: ./config/config.yaml)
+- `--device`: Device to use (cuda/cpu) (default: cuda:2)
+- `--embed_size`: Embedding size (default: 400)
+- `--hidden_size`: Hidden size (default: 2048)
+- `--num_layers`: Number of layers (default: 2)
+- `--max_explanation_length`: Maximum explanation length (default: 15)
+- `--lr`: Learning rate (default: 0.0001)
+- `--num_epochs`: Number of epochs (default: 10)
+- `--batch_size`: Batch size (default: 128)
+- `--num_workers`: Number of workers for data loading (default: 4)
+- `--save_dir`: Directory to save model weights
+- `--seed`: Random seed (default: 0)
+
+### Evaluation
+
+To evaluate the trained baseline model:
+
+```bash
+cd src/models/baseline_model
+python evaluate.py --model_path path/to/saved/model
+```
+
+## Running the Heuristic Model
+
+The heuristic model is a rule-based approach that doesn't require training.
+
+To run the heuristic model:
+
+```bash
+cd src/models/heuristic_model
+python run_heuristic.py
+```
+
+The script will:
+1. Load the data
+2. Initialize the heuristic model
+3. Evaluate on validation and test sets
+4. Save results to `outputs/baseline/baseline_results.json`
+
+## Configuration
+
+Both models share configuration from `src/models/config/config.yaml`. Key configurations include:
+
+```yaml
+model:
+  device: "cuda:2"
+  embed_size: 400
+  hidden_size: 2048
+  num_layers: 2
+  max_explanation_length: 15
+
+training:
+  learning_rate: 0.0001
+  num_epochs: 10
+  batch_size: 128
+  num_workers: 4
+
+data:
+  train_path: "path/to/train.json"
+  val_path: "path/to/val.json"
+  test_path: "path/to/test.json"
+  train_image_dir: "path/to/train/images"
+  val_image_dir: "path/to/val/images"
+  test_image_dir: "path/to/test/images"
+```
+
+## Results
+
+The evaluation results will include:
+- Answer Accuracy
+- BLEU scores (1-4)
+- BERTScore
+- METEOR
+- ROUGE-L
+- CIDEr
+- SPICE
+
+Results are saved in JSON format for both validation and test sets.
