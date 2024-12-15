@@ -1,0 +1,34 @@
+# Data paths
+data:
+  train_path: "/home/VLAI/minhth/ViVQA-X/src/models/datasets/vivqaX_train.json"
+  val_path: "/home/VLAI/minhth/ViVQA-X/src/models/datasets/vivqaX_val.json"
+  test_path: "/home/VLAI/minhth/ViVQA-X/src/models/datasets/vivqaX_test.json"
+
+  
+  # Image directories
+  train_image_dir: '/home/VLAI/datasets/COCO_Images/train2014'
+  val_image_dir: '/home/VLAI/datasets/COCO_Images/val2014'
+  test_image_dir: '/home/VLAI/datasets/COCO_Images/val2014'
+
+# Model parameters
+model:
+  embed_size: 400
+  hidden_size: 2048
+  num_layers: 2
+  max_explanation_length: 15
+  device: "cuda:2"
+
+# Training parameters
+training:
+  batch_size: 128
+  num_workers: 4
+  learning_rate: 0.0001
+  num_epochs: 10
+  save_dir: "./weights"
+  seed: 0
+
+# Evaluation parameters
+evaluation:
+  batch_size: 128
+  num_workers: 4
+  num_samples: 10  # For visualization
