@@ -80,6 +80,7 @@ For the models NLX-GPT, OFA-X, and ReRe, please refer to their respective reposi
 The heuristic model is a rule-based approach that doesn't require training. To run the heuristic model:
 
 1. Configure the model settings in `src/models/heuristic_model/config/config.yaml`:
+
    ```yaml
    data:
      train_path: "data/final/ViVQA-X_train.json"
@@ -102,9 +103,10 @@ The script will evaluate the model on both validation and test sets and save res
 The baseline model (LSTM-Generative) requires training before evaluation. Follow these steps:
 
 1. Configure the model settings in `src/models/baseline_model/config/config.yaml`. Key configurations include:
+
    ```yaml
    model:
-     device: "cuda:0"  # Adjust based on your GPU availability
+     device: "cuda:0" # Adjust based on your GPU availability
      embed_size: 400
      hidden_size: 2048
      num_layers: 2
@@ -119,10 +121,13 @@ The baseline model (LSTM-Generative) requires training before evaluation. Follow
    ```
 
 2. Train the model:
+
    ```sh
    python src/models/baseline_model/train.py [arguments]
    ```
+
    Available arguments:
+
    - `--config`: Path to config file (default: ./config/config.yaml)
    - `--device`: Device to use (cuda/cpu)
    - `--embed_size`: Embedding size
@@ -139,6 +144,7 @@ The baseline model (LSTM-Generative) requires training before evaluation. Follow
    ```
 
 Both models will output evaluation metrics including:
+
 - Answer Accuracy
 - BLEU scores (1-4)
 - BERTScore
@@ -184,4 +190,11 @@ The directory structure of the project is as follows:
 
 ## Citation
 
+```
+@misc{vivqax2025,
+  author    = {Duong, Truong-Binh and Tran, Hoang-Minh and Le-Nguyen, Binh-Nam and Duong, Dinh-Thang},
+  title     = {An Automated Pipeline for Constructing a Vietnamese VQA-NLE Dataset},
+  howpublished = {Accepted for publication in the Proceedings of The International Conference on Intelligent Systems \& Networks (ICISN 2025), Springer Lecture Notes in Networks and Systems (LNNS)},
+  year      = {2025}
+}
 ```
