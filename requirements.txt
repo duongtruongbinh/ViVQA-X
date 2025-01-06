@@ -1,0 +1,29 @@
+# Core Libraries
+numpy==2.0.0
+pandas==2.2.2
+matplotlib==3.9.1
+tqdm==4.66.5
+
+# Modeling & ML Libraries
+torch==2.4.1
+torchvision==0.19.1+cu121
+transformers==4.44.2
+datasets==2.20.0
+scikit_learn==1.5.2
+pycocoevalcap==1.2
+bert_score==0.3.13
+
+# Utilities
+python-dotenv==1.0.1
+protobuf==5.28.3
+wandb==0.17.4
+regex==2024.7.24
+
+# Language Processing
+nltk==3.9.1
+underthesea==6.8.4
+googletrans==3.1.0a0
+openai==1.54.4
+
+# Visualization
+Pillow==11.0.0

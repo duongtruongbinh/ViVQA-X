@@ -1,0 +1,22 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore macOS generated files
+.DS_Store
+__MACOSX
+
+# Ignore environment files
+*.env
+
+# Ignore all files inside the data directory except for the "final" subdirectory
+data/vqax/*
+data/translation/*
+data/selection/*
+
+# Ignore all .jsonl files
+*.jsonl
+
+# Ignore folder datasets
+src/models/datasets/*
+src/models/checkpoints/*
