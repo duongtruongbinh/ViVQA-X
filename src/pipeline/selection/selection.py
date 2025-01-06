@@ -59,7 +59,6 @@ class SelectionPhase:
         self.selection_dir = selection_dir
         self.scoring_dir = os.path.join(selection_dir, 'scoring')
         self.sampling_dir = os.path.join(selection_dir, 'sampling_voting')
-        self.voting_dir = os.path.join(selection_dir, 'voting')
         self.translated_files = [f for f in os.listdir(
             self.translations_dir) if f.endswith('_translated.json')]
 
@@ -68,6 +67,7 @@ class SelectionPhase:
         Runs the scoring step for all evaluators and translated files.
         """
         print("Running scoring step ...")
+        os.makedirs(self.scoring_dir, exist_ok=True)
         evaluation_files = set()
         for evaluator in self.evaluators:
             for file in self.translated_files:
