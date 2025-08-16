@@ -1,14 +1,13 @@
 # Data paths
 data:
-  train_path: "/mnt/VLAI_data/ViVQA-X/ViVQA-X_train.json"
-  val_path: "/mnt/VLAI_data/ViVQA-X/ViVQA-X_val.json"
-  test_path: "/mnt/VLAI_data/ViVQA-X/ViVQA-X_test.json"
-
+  train_path: "data/final/ViVQA-X_train.json"
+  val_path: "data/final/ViVQA-X_val.json"
+  test_path: "data/final/ViVQA-X_test.json"
 
   # Image directories
-  train_image_dir: '/mnt/VLAI_data/COCO_Images/train2014'
-  val_image_dir: '/mnt/VLAI_data/COCO_Images/val2014'
-  test_image_dir: '/mnt/VLAI_data/COCO_Images/val2014'
+  train_image_dir: 'data/coco/train2014'
+  val_image_dir: 'data/coco/val2014'
+  test_image_dir: 'data/coco/val2014'
 
 # Model parameters
 model:

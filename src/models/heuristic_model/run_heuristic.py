@@ -5,9 +5,9 @@ import random
 import numpy as np
 import torch
 from pathlib import Path
-from dataloader.dataset import load_data, build_vocabularies
-from heuristic_baseline import VQABaselineModel, VQAExplanationGenerator
-from metrics.metrics import VQAXEvaluator
+from .dataloaders.dataset import load_data, build_vocabularies
+from .heuristic_baseline import VQABaselineModel, VQAExplanationGenerator
+from .metrics.metrics import VQAXEvaluator
 # from utils.visualization import visualize_predictions
 
 def set_seed(seed: int = 42):
@@ -29,13 +29,13 @@ def load_config(config_path: str) -> dict:
 
 def main():
     # Load configuration
-    config = load_config('./ViCLEVR-X/config/config.yaml')
+    config = load_config('src/models/heuristic_model/config/config.yaml')
     
     # Set random seed
     set_seed(42)
     
     # Create output directory
-    output_dir = Path('ViCLEVR-X/outputs/baseline')
+    output_dir = Path('outputs/heuristic_baseline')
     output_dir.mkdir(parents=True, exist_ok=True)
     
     # Load data

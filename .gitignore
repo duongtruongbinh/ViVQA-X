@@ -21,3 +21,38 @@ data/selection/*
 src/models/datasets/*
 src/models/baseline_model/weights/*
 src/models/baseline_model/evaluation_results/*
+
+# Environment variables
+.env
+.env.local
+
+# Data directories
+data/
+weights/
+outputs/
+checkpoints/
+
+# Cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
+
+# Model weights and large files
+*.pth
+*.pkl
+*.h5
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/

@@ -1,112 +1,210 @@
 # An Automated Pipeline for Constructing a Vietnamese VQA-NLE Dataset
 
-This repository contains the code and resources for the paper "An Automated Pipeline for Constructing a Vietnamese VQA-NLE Dataset".
+[![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
+[![PyTorch](https://img.shields.io/badge/PyTorch-2.4.1-red.svg)](https://pytorch.org/)
+[![Dataset](https://img.shields.io/badge/🤗%20Hugging%20Face-Dataset-blue)](https://huggingface.co/datasets/VLAI-AIVN/ViVQA-X)
+[![Model](https://img.shields.io/badge/🤗%20Hugging%20Face-Model-green)](https://huggingface.co/VLAI-AIVN/ViVQA-X_LSTM-Generative)
+[![Demo](https://img.shields.io/badge/🤗%20Hugging%20Face-Demo-orange)](https://huggingface.co/spaces/VLAI-AIVN/ViVQA-X_LSTM-Generative_Demo)
+
+
+This repository contains the code and resources for the paper "An Automated Pipeline for 
+Constructing a Vietnamese VQA-NLE Dataset".
 
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [Dataset](#dataset)
-- [Installation](#installation)
-- [Usage](#usage)
-  - [Pipeline](#pipeline)
-  - [Benchmark](#benchmark)
-    - [Heuristic Model](#heuristic-model)
-    - [Baseline Model](#baseline-model)
-- [Directory Structure](#directory-structure)
+- [Introduction](#-introduction)
+- [Dataset](#-dataset)
+- [Quick Start](#-quick-start)
+- [Installation](#️-installation)
+- [Usage](#-usage)
+  - [Pipeline](#-pipeline)
+  - [Benchmark](#-benchmark)
+    - [Heuristic Model](#-heuristic-model)
+    - [Baseline Model](#-baseline-model)
+- [Directory Structure](#-directory-structure)
+- [Citation](#-citation)
+- [License](#-license)
 
 ## Introduction
 
-This project provides an automated pipeline for constructing a Vietnamese Visual Question Answering with Natural Language Explanations (VQA-NLE) dataset. The dataset includes images, questions, answers, and explanations in Vietnamese, facilitating research in the field of VQA and NLE.
+This project introduces **ViVQA-X**, the first Vietnamese dataset for Visual Question Answering with Natural Language Explanations (VQA-NLE). Developed using a novel automated pipeline, our work provides a crucial resource to advance research in multimodal AI and explainability for the Vietnamese language. **ViVQA-X** features:
+
+- **32,886** question-answer pairs with detailed explanations
+- **41,817** high-quality natural language explanations
+- Multi-stage automated pipeline for translation and quality control
+- Comprehensive evaluation using multiple state-of-the-art models
+
+This project facilitates research in Vietnamese visual question answering and supports the development of explainable AI systems for Vietnamese language understanding.
 
 ## Dataset
 
-The dataset is organized into several JSON files located in the `data/final` directory. Each file contains a collection of questions, answers, and explanations associated with images from the COCO dataset.
+### 🔗 Access Points
 
-You can also access the dataset on Hugging Face: [ViVQA-X Dataset on Hugging Face](https://huggingface.co/datasets/duongtruongbinh/ViVQA-X)
+| Resource | Description | Link |
+|----------|-------------|------|
+| **Dataset** | ViVQA-X Dataset on Hugging Face | [![Dataset](https://img.shields.io/badge/🤗%20Hugging%20Face-Dataset-blue)](https://huggingface.co/datasets/VLAI-AIVN/ViVQA-X) |
+| **Model Weights** | Pre-trained LSTM-Generative Model | [![Model](https://img.shields.io/badge/🤗%20Hugging%20Face-Model-green)](https://huggingface.co/VLAI-AIVN/ViVQA-X_LSTM-Generative) |
+| **Demo** | Interactive Demo Space | [![Demo](https://img.shields.io/badge/🤗%20Hugging%20Face-Demo-orange)](https://huggingface.co/spaces/VLAI-AIVN/ViVQA-X_LSTM-Generative_Demo) |
+
+### 📈 Dataset Statistics
+
+- **QA Pairs**: 32,886 pairs across Train/Validation/Test splits
+- **Explanations**: 41,817 high-quality explanations  
+- **Average Words**: 10 words per explanation
+- **Vocabulary Size**: 4,232 unique words in explanations
+- **Images**: COCO dataset images with Vietnamese annotations
+
+The dataset is organized into JSON files located in the `data/final` directory, containing questions, answers, and explanations associated with images from the COCO dataset.
+
+## Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/duongtruongbinh/ViVQA-X.git
+cd ViVQA-X
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Download the dataset
+bash scripts/download_vqax.sh
+
+# Run the complete pipeline
+bash scripts/pipeline.sh
+```
 
 ## Installation
 
-To set up the environment and install the required dependencies, follow these steps:
+### Prerequisites
 
-1. Clone the repository:
+- Python 3.8+
+- CUDA 11.2+ (for GPU support)
+- 8GB+ RAM recommended
 
-   ```sh
+### Setup Instructions
+
+1. **Clone the repository**
+   ```bash
    git clone https://github.com/duongtruongbinh/ViVQA-X.git
    cd ViVQA-X
    ```
 
-2. Create a virtual environment and activate it:
-
-   ```sh
-   conda create -n vivqa-x_env
-   conda activate vivqa-x_env
+2. **Create and activate virtual environment**
+   ```bash
+   # Using conda (recommended)
+   conda create -n vivqa-x python=3.8
+   conda activate vivqa-x
+   
+   # Or using venv
+   python -m venv vivqa-x
+   source vivqa-x/bin/activate  # On Windows: vivqa-x\Scripts\activate
    ```
 
-3. Install the required packages:
-
-   ```sh
+3. **Install dependencies**
+   ```bash
    pip install -r requirements.txt
    ```
 
-4. Download the dataset:
-   ```sh
+4. **Set up environment variables (for pipeline)**
+   ```bash
+   # Copy example environment file
+   cp .env.example .env
+   
+   # Edit .env file and add your API keys:
+   # OPENAI_API_KEY=your_openai_api_key_here
+   # GEMINI_APIKEYS=your_gemini_api_key_1,your_gemini_api_key_2
+   ```
+
+5. **Download the original VQA-X dataset**
+   ```bash
    bash scripts/download_vqax.sh
    ```
+
+6. **Download the COCO dataset**
+   The ViVQA-X dataset uses images from the COCO 2014 dataset. You need to download the `train2014` and `val2014` image sets.
+   ```bash
+   # Create directory for COCO data
+   mkdir -p data/coco
+
+   # Download and unzip Train 2014 images (~13GB)
+   wget http://images.cocodataset.org/zips/train2014.zip -P data/coco/
+   unzip data/coco/train2014.zip -d data/coco/
+   rm data/coco/train2014.zip
+
+   # Download and unzip Validation 2014 images (~6GB)
+   wget http://images.cocodataset.org/zips/val2014.zip -P data/coco/
+   unzip data/coco/val2014.zip -d data/coco/
+   rm data/coco/val2014.zip
+   ```
+
+   After this step, you should have the following directory structure: `data/coco/train2014` and `data/coco/val2014`.
 
 ## Usage
 
 ### Pipeline
 
-To run the pipeline, execute the following command:
+Run the complete translation and processing pipeline:
 
-```sh
+```bash
 bash scripts/pipeline.sh
 ```
 
+This will:
+- Translate English VQA-X to Vietnamese
+- Apply quality selection mechanisms
+- Post-process the results
+- Generate the final ViVQA-X dataset
+
 ### Benchmark
 
-We assess the performance of several models on the ViVQA-X dataset, including:
+We provide comprehensive benchmarks using multiple state-of-the-art models:
 
-- Heuristic Model
-- LSTM-Generative (Baseline Model)
-- [NLX-GPT](https://github.com/fawazsammani/nlxgpt)
-- [OFA-X](https://github.com/ofa-x/OFA-X)
-- [ReRe](https://github.com/yeonsue/ReRe)
-
-For the models NLX-GPT, OFA-X, and ReRe, please refer to their respective repositories for detailed evaluation instructions on the ViVQA-X dataset.
+| Model | Repository |
+|-------|------|
+| **Heuristic Model** | Included |
+| **LSTM-Generative** | Included |
+| **NLX-GPT** | [GitHub](https://github.com/fawazsammani/nlxgpt) |
+| **OFA-X** | [GitHub](https://github.com/ofa-x/OFA-X) |
+| **ReRe** | [GitHub](https://github.com/yeonsue/ReRe) |
 
 #### Heuristic Model
 
-The heuristic model is a rule-based approach that doesn't require training. To run the heuristic model:
+A rule-based approach requiring no training:
 
-1. Configure the model settings in `src/models/heuristic_model/config/config.yaml`:
-
+1. **Configure the model**
    ```yaml
+   # src/models/heuristic_model/config/config.yaml
    data:
      train_path: "data/final/ViVQA-X_train.json"
      val_path: "data/final/ViVQA-X_val.json"
      test_path: "data/final/ViVQA-X_test.json"
-     train_image_dir: "path/to/train/images"
-     val_image_dir: "path/to/val/images"
-     test_image_dir: "path/to/test/images"
+     train_image_dir: "data/coco/train2014"
+     val_image_dir: "data/coco/val2014"
+     test_image_dir: "data/coco/val2014"
    ```
 
-2. Run the heuristic model:
-   ```sh
+2. **Run evaluation**
+   ```bash
    python src/models/heuristic_model/run_heuristic.py
    ```
 
-The script will evaluate the model on both validation and test sets and save results to `outputs/baseline/baseline_results.json`.
-
 #### Baseline Model
 
-The baseline model (LSTM-Generative) requires training before evaluation. Follow these steps:
+LSTM-Generative model with attention mechanism:
 
-1. Configure the model settings in `src/models/baseline_model/config/config.yaml`. Key configurations include:
-
+1. **Configure the model**
    ```yaml
+   # src/models/baseline_model/config/config.yaml
+   data:
+     train_path: "data/final/ViVQA-X_train.json"
+     val_path: "data/final/ViVQA-X_val.json"
+     test_path: "data/final/ViVQA-X_test.json"
+     train_image_dir: 'data/coco/train2014'
+     val_image_dir: 'data/coco/val2014'
+     test_image_dir: 'data/coco/val2014'
+
    model:
-     device: "cuda:0" # Adjust based on your GPU availability
+     device: "cuda:0"  # Adjust based on GPU availability
      embed_size: 400
      hidden_size: 2048
      num_layers: 2
@@ -114,83 +212,107 @@ The baseline model (LSTM-Generative) requires training before evaluation. Follow
 
    training:
      learning_rate: 0.0001
-     num_epochs: 10
+     num_epochs: 50
      batch_size: 128
      num_workers: 4
      save_dir: "weights/baseline"
    ```
 
-2. Train the model:
-
-   ```sh
-   python src/models/baseline_model/train.py [arguments]
+2. **Train the model**
+   ```bash
+   # Using script (recommended)
+   bash scripts/train.sh
+   
+   # Or direct command
+   python src/models/baseline_model/train.py --config src/models/baseline_model/config/config.yaml
    ```
 
-   Available arguments:
-
-   - `--config`: Path to config file (default: ./config/config.yaml)
-   - `--device`: Device to use (cuda/cpu)
-   - `--embed_size`: Embedding size
-   - `--hidden_size`: Hidden size
-   - `--num_layers`: Number of layers
-   - `--lr`: Learning rate
-   - `--num_epochs`: Number of epochs
-   - `--batch_size`: Batch size
-   - `--save_dir`: Directory to save model weights
-
-3. Evaluate the trained model:
-   ```sh
-   python src/models/baseline_model/evaluate.py --model_path path/to/saved/model
+3. **Evaluate the model**
+   ```bash
+   # Using script
+   bash scripts/evaluate.sh
+   
+   # Or direct command  
+   python src/models/baseline_model/evaluate.py --model_path weights/baseline/best_model.pth
    ```
 
-Both models will output evaluation metrics including:
+4. **Use pre-trained weights**
+   
+   Download from [![Model](https://img.shields.io/badge/🤗%20Hugging%20Face-Model-green)](https://huggingface.co/VLAI-AIVN/ViVQA-X_LSTM-Generative):
+   ```bash
+   # The model weights are available on Hugging Face
+   # Follow the repository instructions to download and use
+   ```
 
-- Answer Accuracy
-- BLEU scores (1-4)
-- BERTScore
-- METEOR
-- ROUGE-L
-- CIDEr
-- SPICE
+### Evaluation Metrics
+
+Both models provide comprehensive evaluation metrics:
+
+| Metric | Description |
+|--------|-------------|
+| **Answer Accuracy** | Exact match accuracy for answers |
+| **BLEU-1/2/3/4** | N-gram precision for explanations |
+| **BERTScore** | Contextual similarity score |
+| **METEOR** | Semantic similarity with WordNet |
+| **ROUGE-L** | Longest common subsequence |
+| **CIDEr** | Consensus-based evaluation |
+| **SPICE** | Semantic propositional evaluation |
 
 ## Directory Structure
 
-The directory structure of the project is as follows:
-
 ```
-.
-├── data/
-│   ├── vqax
-│   ├── translation
-│   ├── selection
-│   └── final
-├── notebooks/
-├── scripts/
-│   ├── download_vqax.sh
-│   ├── pipeline.sh
-│   ├── train.sh
-│   └── evaluate.sh
-├── src/
-│   ├── models/
-│   │   ├── baseline_model/
-│   │   │   ├── train.py
-│   │   │   ├── evaluate.py
-│   │   │   └── vivqax_model.py
-│   │   └── heuristic_model/
-│   │       ├── run_heuristic.py
-│   │       └── heuristic_baseline.py
-│   ├── pipeline/
-│   │   ├── translation/
-│   │   ├── selection/
-│   │   ├── post_processing/
-│   │   └── pipeline.py
-├── requirements.txt
-└── README.md
+ViVQA-X/
+├── data/                          # Dataset files
+│   ├── vqax/                         # Original VQA-X dataset
+│   ├── translation/                  # Translation intermediate files
+│   ├── selection/                    # Quality selection files
+│   └── final/                        # Final ViVQA-X dataset
+│       ├── ViVQA-X_train.json
+│       ├── ViVQA-X_val.json
+│       └── ViVQA-X_test.json
+├── notebooks/                     # Jupyter notebooks for analysis
+├── scripts/                       # Utility scripts
+│   ├── download_vqax.sh              # Download original dataset
+│   ├── pipeline.sh                   # Run complete pipeline
+│   ├── train.sh                      # Train baseline model
+│   └── evaluate.sh                   # Evaluate models
+├── src/                           # Source code
+│   ├── models/                       # Model implementations
+│   │   ├── baseline_model/           # LSTM-Generative model
+│   │   │   ├── config/               # Configuration files
+│   │   │   ├── dataloaders/          # Data loading utilities
+│   │   │   ├── metrics/              # Evaluation metrics
+│   │   │   ├── utils/                # Helper utilities
+│   │   │   ├── weights/              # Model checkpoints
+│   │   │   ├── train.py              # Training script
+│   │   │   ├── evaluate.py           # Evaluation script
+│   │   │   └── vivqax_model.py       # Model architecture
+│   │   └── heuristic_model/          # Rule-based baseline
+│   │       ├── config/               # Configuration files
+│   │       ├── dataloaders/          # Data loading utilities
+│   │       ├── metrics/              # Evaluation metrics
+│   │       ├── utils/                # Helper utilities
+│   │       ├── run_heuristic.py      # Main evaluation script
+│   │       └── heuristic_baseline.py # Model implementation
+│   └── pipeline/                     # Data processing pipeline
+│       ├── translation/              # Translation modules
+│       │   ├── translators/          # Various translator implementations
+│       │   └── translation.py        # Translation pipeline
+│       ├── selection/                # Quality selection modules
+│       │   ├── evaluators/           # LLM evaluators
+│       │   └── selection.py          # Selection pipeline
+│       ├── post_processing/          # Post-processing modules
+│       └── pipeline.py               # Main pipeline script
+├── requirements.txt               # Python dependencies
+├── LICENSE                        
+└── README.md                      # This file
 ```
 
 ## Citation
 
-```
+If you use this dataset or code in your research, please cite our paper:
+
+```bibtex
 @misc{vivqax2025,
   author    = {Duong, Truong-Binh and Tran, Hoang-Minh and Le-Nguyen, Binh-Nam and Duong, Dinh-Thang},
   title     = {An Automated Pipeline for Constructing a Vietnamese VQA-NLE Dataset},
@@ -198,3 +320,13 @@ The directory structure of the project is as follows:
   year      = {2025}
 }
 ```
+
+
+<div align="center">
+  <p>
+    <a href="https://huggingface.co/datasets/VLAI-AIVN/ViVQA-X">🤗 Dataset</a> •
+    <a href="https://huggingface.co/VLAI-AIVN/ViVQA-X_LSTM-Generative">🤗 Model</a> •
+    <a href="https://huggingface.co/spaces/VLAI-AIVN/ViVQA-X_LSTM-Generative_Demo">🤗 Demo</a> •
+    <a href="mailto:duongtruongbinh@gmail.com">📧 Contact</a>
+  </p>
+</div>

@@ -1,5 +1,6 @@
 #!/bin/bash
-DATASET_DIR="../data/vqax"
+
+DATASET_DIR="data/vqax"
 mkdir -p $DATASET_DIR
 
 echo "Downloading VQA-X dataset..."

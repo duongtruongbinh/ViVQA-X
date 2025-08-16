@@ -4,7 +4,7 @@ from PIL import Image
 from torchvision import transforms
 from nltk.tokenize import word_tokenize
 from tqdm import tqdm
-from metrics.metrics import VQAXEvaluator
+from .metrics.metrics import VQAXEvaluator
 from typing import Dict, List, Tuple, Any
 
 
