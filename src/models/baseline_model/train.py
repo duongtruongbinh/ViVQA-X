@@ -328,24 +328,24 @@ def parse_args():
 
     # Dataset paths
     parser.add_argument('--train_path', type=str,
-                        default="/mnt/VLAI_data/ViVQA-X/ViVQA-X_train.json",
+                        default="data/final/ViVQA-X_train.json",
                         help='Path to training data file')
     parser.add_argument('--val_path', type=str,
-                        default="/mnt/VLAI_data/ViVQA-X/ViVQA-X_val.json",
+                        default="data/final/ViVQA-X_val.json",
                         help='Path to validation data file')
     parser.add_argument('--test_path', type=str,
-                        default="/mnt/VLAI_data/ViVQA-X/ViVQA-X_test.json",
+                        default="data/final/ViVQA-X_test.json",
                         help='Path to test data file')
 
     # Image directories
     parser.add_argument('--train_image_dir', type=str,
-                        default='/mnt/VLAI_data/COCO_Images/train2014',
+                        default='data/coco/train2014',
                         help='Path to training images directory')
     parser.add_argument('--val_image_dir', type=str,
-                        default='/mnt/VLAI_data/COCO_Images/val2014',
+                        default='data/coco/val2014',
                         help='Path to validation images directory')
     parser.add_argument('--test_image_dir', type=str,
-                        default='/mnt/VLAI_data/COCO_Images/val2014',
+                        default='data/coco/val2014',
                         help='Path to test images directory')
 
     return parser.parse_args()

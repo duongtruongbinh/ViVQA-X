@@ -26,7 +26,6 @@ class PipelineManager:
             self.translation_phase.run()
         elif only_selection:
             self.selection_phase.run()
-            pass
         elif only_post_processing:
             self.post_processing_phase.run()
         else:
