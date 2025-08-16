@@ -4,15 +4,14 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-import os
 from pathlib import Path
 import yaml
 from typing import Dict, Tuple
 import argparse
 
-from baseline.vivqax_model import ViVQAX_Model
-from metrics.metrics import VQAXEvaluator
-from dataloader.dataloader import get_dataloaders
+from src.models.baseline_model.vivqax_model import ViVQAX_Model
+from src.models.baseline_model.metrics.metrics import VQAXEvaluator
+from src.models.baseline_model.dataloaders.dataloader import get_dataloaders
 
 
 class VQAXTrainer:
@@ -133,6 +132,12 @@ class VQAXTrainer:
         total_answer_loss = 0
         total_explanation_loss = 0
 
+        num_epochs = self.config['training']['num_epochs']
+        initial_tf_ratio = 1.0
+        final_tf_ratio = 0.1 
+        teacher_forcing_ratio = max(final_tf_ratio, initial_tf_ratio - (epoch / (num_epochs * 0.8)) * (initial_tf_ratio - final_tf_ratio))
+        print(f"Epoch {epoch+1} - Using Teacher Forcing Ratio: {teacher_forcing_ratio:.4f}")
+        
         train_loop = tqdm(self.train_loader, desc=f'Epoch {epoch+1}')
         for batch in train_loop:
             self.optimizer.zero_grad()
@@ -148,7 +153,7 @@ class VQAXTrainer:
                 images,
                 questions,
                 explanations,
-                teacher_forcing_ratio=0.5
+                teacher_forcing_ratio=teacher_forcing_ratio
             )
 
             # Compute loss
@@ -180,45 +185,73 @@ class VQAXTrainer:
         }
 
     def validate(self) -> Dict[str, float]:
-        """Validate the model."""
+        """Validate the model efficiently in a single pass."""
         self.model.eval()
         total_loss = 0
-
+        
+        all_answer_preds = []
+        all_answer_trues = []
+        all_explanation_preds = {}
+        all_explanation_trues = {}
+        
         with torch.no_grad():
-            for batch in self.val_loader:
+            for i, batch in enumerate(tqdm(self.val_loader, desc="Validating")):
                 # Move batch to device
                 images = batch['image'].to(self.device)
                 questions = batch['question'].to(self.device)
                 answers = batch['answer'].to(self.device)
                 explanations = batch['explanation'].to(self.device)
 
-                # Forward pass
-                answer_logits, explanation_outputs = self.model(
+                # Forward pass for both loss and generation
+                answer_logits, explanation_outputs_for_loss = self.model(
                     images,
                     questions,
-                    explanations,
-                    teacher_forcing_ratio=0.0  # No teacher forcing during validation
+                    explanations, # Pass target explanations for loss calculation
+                    teacher_forcing_ratio=0.0
                 )
-
-                # Compute loss
+                
+                # 1. Compute loss
                 loss, _, _ = self.compute_loss(
-                    answer_logits, explanation_outputs, answers, explanations
+                    answer_logits, explanation_outputs_for_loss, answers, explanations
                 )
                 total_loss += loss.item()
 
-        # Get average loss
+                # Generate explanations for metric evaluation
+                _, generated_explanations = self.model.generate_explanation(images, questions)
+
+                # 2. Collect predictions and ground truths for metrics
+                predicted_answers = answer_logits.argmax(dim=1)
+                all_answer_preds.extend(predicted_answers.cpu().numpy())
+                all_answer_trues.extend(answers.cpu().numpy())
+                
+                for j, (pred, true) in enumerate(zip(generated_explanations, explanations)):
+                    pred_words = ' '.join([
+                        self.idx2word[idx.item()] 
+                        for idx in pred 
+                        if self.idx2word[idx.item()] not in ['<PAD>', '<UNK>', '<START>', '<END>']
+                    ])
+                    true_words = ' '.join([
+                        self.idx2word[idx.item()] 
+                        for idx in true 
+                        if self.idx2word[idx.item()] not in ['<PAD>', '<UNK>', '<START>', '<END>']
+                    ])
+                    sample_id = f"{i}_{j}"
+                    all_explanation_preds[sample_id] = [pred_words]
+                    all_explanation_trues[sample_id] = [true_words]
+
+        # Calculate average loss
         avg_loss = total_loss / len(self.val_loader)
 
-        # Get other metrics
-        metrics = self.evaluator.evaluate(
-            self.model,
-            self.val_loader,
-            self.idx2word
-        )
+        answer_metrics = self.evaluator.compute_answer_metrics(
+            all_answer_preds, all_answer_trues)
+        
+        explanation_metrics = self.evaluator.compute_explanation_metrics(
+            all_explanation_preds, all_explanation_trues)
 
-        # Add loss to metrics
+        # Combine all metrics
+        metrics = {**answer_metrics, **explanation_metrics}
         metrics['loss'] = avg_loss
-
+        
         return metrics
 
     def train(self):
@@ -260,23 +293,15 @@ class VQAXTrainer:
             print("=" * 50)
 
 
-def release_memory(trainer):
-    del model
-    del train_loader
-    del val_loader
-    del test_loader
-    torch.cuda.empty_cache()
-    gc.collect()
-
 
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='Train ViVQA-X model')
 
     # Model arguments
-    parser.add_argument('--config', type=str, default='./config/config.yaml',
+    parser.add_argument('--config', type=str, default='src/models/baseline_model/config/config.yaml',
                         help='Path to config file')
-    parser.add_argument('--device', type=str, default="cuda:2",
+    parser.add_argument('--device', type=str, default="cuda:0",
                         help='Device to use (cuda/cpu)')
     parser.add_argument('--embed_size', type=int, default=400,
                         help='Embedding size')
@@ -290,37 +315,37 @@ def parse_args():
     # Training arguments
     parser.add_argument('--lr', type=float, default=0.0001,
                         help='Learning rate')
-    parser.add_argument('--num_epochs', type=int, default=10,
+    parser.add_argument('--num_epochs', type=int, default=50,
                         help='Number of epochs')
     parser.add_argument('--batch_size', type=int, default=128,
                         help='Batch size for training')
     parser.add_argument('--num_workers', type=int, default=4,
                         help='Number of workers for data loading')
-    parser.add_argument('--save_dir', type=str, default="./ViCLEVR-X/weights",
+    parser.add_argument('--save_dir', type=str, default="src/models/baseline_model/weights",
                         help='Directory to save model')
     parser.add_argument('--seed', type=int, default=0,
                         help='Random seed')
 
     # Dataset paths
     parser.add_argument('--train_path', type=str,
-                        default="/home/VLAI/minhth/ViCLEVR-X/datasets/ViVQA-X/vivqaX_train.json",
+                        default="/mnt/VLAI_data/ViVQA-X/ViVQA-X_train.json",
                         help='Path to training data file')
     parser.add_argument('--val_path', type=str,
-                        default="/home/VLAI/minhth/ViCLEVR-X/datasets/ViVQA-X/vivqaX_val.json",
+                        default="/mnt/VLAI_data/ViVQA-X/ViVQA-X_val.json",
                         help='Path to validation data file')
     parser.add_argument('--test_path', type=str,
-                        default="/home/VLAI/minhth/ViCLEVR-X/datasets/ViVQA-X/vivqaX_test.json",
+                        default="/mnt/VLAI_data/ViVQA-X/ViVQA-X_test.json",
                         help='Path to test data file')
 
     # Image directories
     parser.add_argument('--train_image_dir', type=str,
-                        default='/home/VLAI/datasets/COCO_Images/train2014',
+                        default='/mnt/VLAI_data/COCO_Images/train2014',
                         help='Path to training images directory')
     parser.add_argument('--val_image_dir', type=str,
-                        default='/home/VLAI/datasets/COCO_Images/val2014',
+                        default='/mnt/VLAI_data/COCO_Images/val2014',
                         help='Path to validation images directory')
     parser.add_argument('--test_image_dir', type=str,
-                        default='/home/VLAI/datasets/COCO_Images/val2014',
+                        default='/mnt/VLAI_data/COCO_Images/val2014',
                         help='Path to test images directory')
 
     return parser.parse_args()
@@ -381,11 +406,16 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(config['training']['seed'])
 
-    # Initialize trainer
     trainer = VQAXTrainer(config)
 
     # Start training
-    trainer.train()
+    try:
+        trainer.train()
+    finally:
+        del trainer
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
 
 if __name__ == '__main__':

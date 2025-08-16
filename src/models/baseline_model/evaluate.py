@@ -5,9 +5,9 @@ import json
 from tqdm import tqdm
 from typing import Dict, List
 
-from baseline.vivqax_model import ViVQAX_Model
-from metrics.metrics import VQAXEvaluator
-from dataloader.dataloader import get_dataloaders
+from src.models.baseline_model.vivqax_model import ViVQAX_Model
+from src.models.baseline_model.metrics.metrics import VQAXEvaluator
+from src.models.baseline_model.dataloaders.dataloader import get_dataloaders
 # from utils.visualization import visualize_predictions
 
 class VQAX_Evaluator:
@@ -24,7 +24,7 @@ class VQAX_Evaluator:
             self.config = yaml.safe_load(f)
         
         # Load checkpoint
-        self.checkpoint = torch.load(checkpoint_path, map_location='cpu')
+        self.checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
         
         # Setup device
         self.device = torch.device(self.config['model']['device'])
@@ -52,7 +52,7 @@ class VQAX_Evaluator:
         self.metrics_calculator = VQAXEvaluator()
         
         # Setup output directory
-        self.output_dir = Path('ViCLEVR-X/evaluation_results')
+        self.output_dir = Path('src/models/baseline_model/evaluation_results')
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
     def evaluate_split(self, split: str = 'test') -> Dict:
@@ -103,10 +103,9 @@ class VQAX_Evaluator:
             output_dir=self.output_dir / f'{split}_visualizations'
         )
 
-    def run_full_evaluation(self):
+    def run_evaluation(self, splits: list[str] = ['train', 'val', 'test']):
         """Run complete evaluation pipeline."""
         # Evaluate on all splits
-        splits = ['train', 'val', 'test']
         all_metrics = {}
         
         for split in splits:
@@ -135,7 +134,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--checkpoint', type=str, required=True,
                       help='Path to model checkpoint')
-    parser.add_argument('--config', type=str, default='config/config.yaml',
+    parser.add_argument('--config', type=str, default='src/models/baseline_model/config/config.yaml',
                       help='Path to config file')
     args = parser.parse_args()
     
@@ -143,7 +142,7 @@ def main():
     evaluator = VQAX_Evaluator(args.checkpoint, args.config)
     
     # Run evaluation
-    evaluator.run_full_evaluation()
+    evaluator.run_evaluation(splits=['test'])
 
 if __name__ == '__main__':
     main()

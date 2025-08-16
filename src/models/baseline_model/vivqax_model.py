@@ -152,7 +152,33 @@ class ViVQAX_Model(nn.Module):
         
         explanation_outputs = torch.cat(explanation_outputs, dim=1)
         return answer_logits, explanation_outputs
+    
+    def _length_penalty(self, length, alpha=0.8):
+        # Google NMT style length penalty
+        return ((5 + length) ** alpha) / ((5 + 1) ** alpha)
 
+    def _violates_no_repeat_ngram(self, seq, next_tok, n=2):
+        if len(seq) < n - 1:
+            return False
+        ngram = tuple(seq[-(n-1):] + [next_tok])
+        for i in range(len(seq) - n + 1):
+            if tuple(seq[i:i+n]) == ngram:
+                return True
+        return False
+
+    def _apply_repetition_penalty(self, logits, seq, penalty=1.5):
+        # Reduce logits of tokens that already appeared in the sequence
+        if len(seq) <= 1:
+            return logits
+        uniq_tokens = list(set(seq[1:]))  # skip <START>
+        penalty_value = torch.log(torch.tensor(penalty, device=logits.device))
+        # Support both shape [V] and [B, V]
+        if logits.dim() == 1:
+            logits[uniq_tokens] -= penalty_value
+        else:
+            logits[:, uniq_tokens] -= penalty_value
+        return logits    
+    
     def generate_explanation(self, 
                            image: torch.Tensor,
                            question: torch.Tensor,
@@ -214,16 +240,23 @@ class ViVQAX_Model(nn.Module):
                             decoder_input_combined,
                             (hidden_h, hidden_c)
                         )
-                    
-                    logits = self.explanation_output(output.squeeze(1))
-                    probs = F.log_softmax(logits, dim=-1)
-                    
+
+                    # Shape to [V] for simpler top-k handling
+                    logits = self.explanation_output(output).squeeze(0).squeeze(0)  # [V]
+                    logits = self._apply_repetition_penalty(logits, seq, penalty=1.5)
+                    probs = F.log_softmax(logits, dim=-1)  # [V]
+
                     # Add top-k candidates
-                    topk_probs, topk_indices = probs.topk(beam_size)
-                    for prob, idx in zip(topk_probs[0], topk_indices[0]):
+                    topk_probs, topk_indices = probs.topk(beam_size)  # [K]
+                    for prob, idx in zip(topk_probs, topk_indices):
+                        idx_item = idx.item()
+                        # no-repeat n-gram
+                        if self._violates_no_repeat_ngram(seq, idx_item, n=2):
+                            continue
+                        new_score = score + prob.item()
                         candidates.append((
-                            score + prob.item(),
-                            seq + [idx.item()],
+                            new_score,
+                            seq + [idx_item],
                             hidden_h,
                             hidden_c
                         ))
@@ -231,7 +264,19 @@ class ViVQAX_Model(nn.Module):
                 # Select top beam_size candidates
                 candidates.sort(key=lambda x: x[0], reverse=True)
                 new_beams[i] = candidates[:beam_size]
-            
+            # Early stopping
+            all_done = True
+            end_id = self.word2idx['<END>']
+            for i in range(batch_size):
+                if not new_beams[i]:
+                    continue
+                done_i = all((seq[-1] == end_id) for _, seq, _, _ in new_beams[i])
+                if not done_i:
+                    all_done = False
+                    break
+            if all_done:
+                beams = new_beams
+                break
             beams = new_beams
         
         # Select best sequence from each beam
@@ -240,7 +285,7 @@ class ViVQAX_Model(nn.Module):
             if not beam:
                 generated_explanations.append(torch.tensor([self.word2idx['<PAD>']], device=device))
             else:
-                best_seq = max(beam, key=lambda x: x[0])[1]
+                best_seq = max(beam, key=lambda x: x[0] / self._length_penalty(len(x[1])))[1]
                 generated_explanations.append(torch.tensor(best_seq, device=device))
         
         # Pad sequences
