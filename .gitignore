@@ -27,7 +27,6 @@ src/models/baseline_model/evaluation_results/*
 .env.local
 
 # Data directories
-data/
 weights/
 outputs/
 checkpoints/

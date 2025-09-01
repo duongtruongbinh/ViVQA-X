@@ -1,5 +1,8 @@
 # An Automated Pipeline for Constructing a Vietnamese VQA-NLE Dataset
 
+📄 **Official Paper:** https://link.springer.com/chapter/10.1007/978-981-95-1746-6_18
+
+[![Paper](https://img.shields.io/badge/Springer-Paper-blue)](https://link.springer.com/chapter/10.1007/978-981-95-1746-6_18)
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.4.1-red.svg)](https://pytorch.org/)
 [![Dataset](https://img.shields.io/badge/🤗%20Hugging%20Face-Dataset-blue)](https://huggingface.co/datasets/VLAI-AIVN/ViVQA-X)
@@ -9,6 +12,8 @@
 
 This repository contains the code and resources for the paper "An Automated Pipeline for 
 Constructing a Vietnamese VQA-NLE Dataset".
+
+![Pipeline](assets/ViVQA-X-pipeline.png)
 
 ## Table of Contents
 
@@ -313,13 +318,16 @@ ViVQA-X/
 If you use this dataset or code in your research, please cite our paper:
 
 ```bibtex
-@incollection{duong2025vivqax,
+@InProceedings{duong2026vivqax,
   author    = {Truong-Binh Duong and Hoang-Minh Tran and Binh-Nam Le-Nguyen and Dinh-Thang Duong},
   title     = {An Automated Pipeline for Constructing a Vietnamese VQA-NLE Dataset},
-  booktitle = {Proceedings of the Fifth International Conference on Intelligent Systems and Networks (ICISN 2025)},
+  booktitle = {Proceedings of the Fifth International Conference on Intelligent Systems and Networks},
   series    = {Lecture Notes in Networks and Systems},
-  publisher = {Springer},
-  year      = {2025},
+  year      = {2026},
+  publisher = {Springer Nature Singapore},
+  pages     = {164--173},
+  isbn      = {978-981-95-1746-6},
+  doi       = {10.1007/978-981-95-1746-6_18}
 }
 ```
 
